@@ -72,7 +72,7 @@ export default function AppAppBar() {
               >
                 Quienes Somos
               </Button>
-              <Button
+              {/* <Button
                 component="a"
                 href="/how-we-work"
                 variant="text"
@@ -89,7 +89,7 @@ export default function AppAppBar() {
                 size="medium"
               >
                 Preguntas frecuentes
-              </Button>
+              </Button> */}
             </Box>
           </Box>
           <Box
@@ -164,7 +164,7 @@ export default function AppAppBar() {
                   Quienes Somos
                 </Button>
 
-                <Button
+                {/* <Button
                   fullWidth
                   component="a"
                   href="/how-we-work"
@@ -184,7 +184,7 @@ export default function AppAppBar() {
                   size="medium"
                 >
                   FAQs
-                </Button>
+                </Button> */}
 
                 <Divider sx={{ my: 3 }} />
 
