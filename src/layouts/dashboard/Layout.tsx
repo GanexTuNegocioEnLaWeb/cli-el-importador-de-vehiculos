@@ -12,7 +12,7 @@ import { NavLink, Outlet, useMatches, type UIMatch } from "react-router";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
-import Header from "../../components/Header";
+import Header from "./Header";
 import Sidebar from "./Sidebar";
 
 function LayoutDashboard() {
@@ -53,54 +53,55 @@ function LayoutDashboard() {
       );
     });
   return (
-    <>
-      <CssVarsProvider disableTransitionOnChange>
-        <CssBaseline />
-        <Box sx={{ display: "flex", minHeight: "100dvh" }}>
-          <Header /> {/* Is for mobile */}
-          <Sidebar />
-          <Box
-            component="main"
-            className="MainContent"
-            sx={{
-              px: { xs: 2, md: 6 },
-              pt: {
-                xs: "calc(12px + var(--Header-height))",
-                sm: "calc(12px + var(--Header-height))",
-                md: 3,
-              },
-              pb: { xs: 2, sm: 2, md: 3 },
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              minWidth: 0,
-              height: "100dvh",
-              gap: 1,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Breadcrumbs
-                size="sm"
-                separator={<ChevronRightRoundedIcon />}
-                sx={{ pl: 0 }}
+    <CssVarsProvider disableTransitionOnChange>
+      <CssBaseline />
+      <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+        <Header /> {/* Is for mobile */}
+        <Sidebar />
+        <Box
+          component="main"
+          className="MainContent"
+          sx={{
+            px: { xs: 2, md: 6 },
+            pt: {
+              xs: "calc(12px + var(--Header-height))",
+              sm: "calc(12px + var(--Header-height))",
+              md: 3,
+            },
+            pb: { xs: 2, sm: 2, md: 3 },
+            position: "relative",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minWidth: 0,
+            minHeight: 0,
+            height: "100dvh",
+            overflowY: "auto",
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Breadcrumbs
+              size="sm"
+              separator={<ChevronRightRoundedIcon />}
+              sx={{ pl: 0 }}
+            >
+              <Link
+                component={NavLink}
+                to="/dashboard"
+                underline="none"
+                color="neutral"
               >
-                <Link
-                  component={NavLink}
-                  to="/dashboard"
-                  underline="none"
-                  color="neutral"
-                >
-                  <HomeRoundedIcon />
-                </Link>
+                <HomeRoundedIcon />
+              </Link>
 
-                {crumbs}
-              </Breadcrumbs>
-            </Box>
-            <Outlet />
+              {crumbs}
+            </Breadcrumbs>
           </Box>
+          <Outlet />
         </Box>
-      </CssVarsProvider>
-    </>
+      </Box>
+    </CssVarsProvider>
   );
 }
 

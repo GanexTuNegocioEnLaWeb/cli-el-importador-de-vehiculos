@@ -17,26 +17,17 @@ export function VehicleDetailsStep({
   onBack,
   onDataChange,
 }: VehicleDetailsStepProps) {
+  const [localData, setLocalData] = useState(vehicleData);
   const [isValid, setIsValid] = useState(true);
 
   const handleChange = (data: VehicleData) => {
-    onDataChange?.(data);
-    // Basic validation
+    setLocalData(data);
     setIsValid(!!data.make && !!data.model && data.year > 0);
   };
 
-  // Create raw data structure for VehicleImportForm
-  const rawData = {
-    metadata: {
-      title: `${vehicleData.year} ${vehicleData.make} ${vehicleData.model} ${vehicleData.trim} | ${vehicleData.condition} | ${vehicleData.auctionDate} | ${vehicleData.location}`,
-      sourceURL: vehicleData.sourceUrl,
-      timezone: vehicleData.timezone,
-      language: vehicleData.language,
-    },
-    json: {
-      company_name: vehicleData.companyName,
-      company_description: vehicleData.companyDescription,
-    },
+  const handleNext = () => {
+    onDataChange?.(localData);
+    onNext();
   };
 
   return (
@@ -45,13 +36,13 @@ export function VehicleDetailsStep({
         Detalles del Vehículo
       </Typography>
 
-      <VehicleImportForm rawData={rawData} onChange={handleChange} />
+      <VehicleImportForm value={localData} onChange={handleChange} />
 
       <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
         <Button variant="outlined" onClick={onBack}>
           Atrás
         </Button>
-        <Button onClick={onNext} disabled={!isValid}>
+        <Button onClick={handleNext} disabled={!isValid}>
           Continuar a Cotización
         </Button>
       </Stack>

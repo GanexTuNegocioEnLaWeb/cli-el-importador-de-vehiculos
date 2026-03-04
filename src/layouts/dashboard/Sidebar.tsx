@@ -1,33 +1,39 @@
 import * as React from "react";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 
 import GlobalStyles from "@mui/joy/GlobalStyles";
 import Avatar from "@mui/joy/Avatar";
 import Box from "@mui/joy/Box";
 import Divider from "@mui/joy/Divider";
 import IconButton from "@mui/joy/IconButton";
-import Input from "@mui/joy/Input";
+// import Input from "@mui/joy/Input";
 import List from "@mui/joy/List";
 import ListItem from "@mui/joy/ListItem";
 import ListItemButton, { listItemButtonClasses } from "@mui/joy/ListItemButton";
 import ListItemContent from "@mui/joy/ListItemContent";
 import Typography from "@mui/joy/Typography";
 import Sheet from "@mui/joy/Sheet";
+import Modal from "@mui/joy/Modal";
+import ModalDialog from "@mui/joy/ModalDialog";
+import DialogTitle from "@mui/joy/DialogTitle";
+import DialogContent from "@mui/joy/DialogContent";
+import DialogActions from "@mui/joy/DialogActions";
+import Button from "@mui/joy/Button";
 
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import RequestQuoteRoundedIcon from "@mui/icons-material/RequestQuoteRounded";
 import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
-import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import SupportRoundedIcon from "@mui/icons-material/SupportRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import BrightnessAutoRoundedIcon from "@mui/icons-material/BrightnessAutoRounded";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+// import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 
 import ColorSchemeToggle from "../../components/ColorSchemeToggle";
 import { closeSidebar } from "../../utils";
 import { Link } from "@mui/joy";
+import { supabase } from "../../lib/supabaseClient";
 
 function Toggler({
   defaultExpanded = false,
@@ -65,6 +71,46 @@ function Toggler({
 }
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+  const [openLogout, setOpenLogout] = React.useState(false);
+  const [userProfile, setUserProfile] = React.useState<{
+    fullName: string;
+    email: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    async function fetchUserProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          setUserProfile({
+            fullName: profile.full_name,
+            email: profile.email,
+          });
+        } else {
+          setUserProfile({
+            fullName: user.user_metadata?.full_name || "Usuario",
+            email: user.email || "",
+          });
+        }
+      }
+    }
+    fetchUserProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
   return (
     <Sheet
       className="Sidebar"
@@ -128,11 +174,11 @@ export default function Sidebar() {
         <ColorSchemeToggle sx={{ ml: "auto" }} />
       </Box>
 
-      <Input
+      {/* <Input
         size="sm"
         startDecorator={<SearchRoundedIcon />}
         placeholder="Buscar..."
-      />
+      /> */}
 
       {/* Navigation */}
       <Box
@@ -160,7 +206,7 @@ export default function Sidebar() {
             <ListItemButton component={NavLink} to="/dashboard">
               <DashboardRoundedIcon />
               <ListItemContent>
-                <Typography level="title-sm">Inicio</Typography>
+                <Typography level="title-sm">Panel de control</Typography>
               </ListItemContent>
             </ListItemButton>
           </ListItem>
@@ -237,39 +283,6 @@ export default function Sidebar() {
               </List>
             </Toggler>
           </ListItem>
-
-          {/* Usuarios */}
-          <ListItem nested>
-            <Toggler
-              renderToggle={({ open, setOpen }) => (
-                <ListItemButton onClick={() => setOpen(!open)}>
-                  <GroupRoundedIcon />
-                  <ListItemContent>
-                    <Typography level="title-sm">Usuarios</Typography>
-                  </ListItemContent>
-                  <KeyboardArrowDownIcon
-                    sx={{ transform: open ? "rotate(180deg)" : "none" }}
-                  />
-                </ListItemButton>
-              )}
-            >
-              <List sx={{ gap: 0.5 }}>
-                <ListItem sx={{ mt: 0.5 }}>
-                  <ListItemButton
-                    component={NavLink}
-                    to="/dashboard/users/create"
-                  >
-                    Nuevo usuario
-                  </ListItemButton>
-                </ListItem>
-                <ListItem>
-                  <ListItemButton component={NavLink} to="/dashboard/users">
-                    Ver usuarios
-                  </ListItemButton>
-                </ListItem>
-              </List>
-            </Toggler>
-          </ListItem>
         </List>
 
         {/* Bottom */}
@@ -280,19 +293,23 @@ export default function Sidebar() {
             flexGrow: 0,
             "--ListItem-radius": (theme) => theme.vars.radius.sm,
             "--List-gap": "8px",
-            mb: 2,
           }}
         >
           <ListItem>
-            <ListItemButton component={NavLink} to="/dashboard/support">
+            <ListItemButton
+              component="a"
+              href="https://wa.me/59177053462"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <SupportRoundedIcon />
               Soporte
             </ListItemButton>
           </ListItem>
           <ListItem>
-            <ListItemButton component={NavLink} to="/dashboard/config">
-              <SettingsRoundedIcon />
-              Configuración
+            <ListItemButton onClick={() => setOpenLogout(true)}>
+              <LogoutRoundedIcon />
+              Cerrar sesión
             </ListItemButton>
           </ListItem>
         </List>
@@ -314,7 +331,13 @@ export default function Sidebar() {
           component={NavLink}
           to="/dashboard/profile"
         >
-          <Avatar variant="outlined" size="sm" />
+          <Avatar
+            variant="outlined"
+            size="sm"
+            src={userProfile?.fullName ? undefined : undefined}
+          >
+            {userProfile?.fullName?.[0]}
+          </Avatar>
 
           <Box
             sx={{
@@ -333,7 +356,7 @@ export default function Sidebar() {
                 textOverflow: "ellipsis",
               }}
             >
-              Usuario
+              {userProfile?.fullName || "Cargando..."}
             </Typography>
 
             <Typography
@@ -345,11 +368,38 @@ export default function Sidebar() {
                 textOverflow: "ellipsis",
               }}
             >
-              usuario@email.com
+              {userProfile?.email || ""}
             </Typography>
           </Box>
         </Link>
       </Box>
+
+      {/* Modal de confirmación de cierre de sesión */}
+      <Modal open={openLogout} onClose={() => setOpenLogout(false)}>
+        <ModalDialog variant="outlined" role="alertdialog">
+          <DialogTitle>Confirmar cierre de sesión</DialogTitle>
+          <Divider />
+          <DialogContent>
+            ¿Estás seguro de que deseas cerrar sesión?
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="solid"
+              color="danger"
+              onClick={handleLogout}
+            >
+              Cerrar sesión
+            </Button>
+            <Button
+              variant="plain"
+              color="neutral"
+              onClick={() => setOpenLogout(false)}
+            >
+              Cancelar
+            </Button>
+          </DialogActions>
+        </ModalDialog>
+      </Modal>
     </Sheet>
   );
 }

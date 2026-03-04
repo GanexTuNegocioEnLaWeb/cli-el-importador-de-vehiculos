@@ -12,16 +12,20 @@ import {
   Box,
 } from "@mui/joy";
 import DownloadIcon from "@mui/icons-material/Download";
-import { type ScrapedData } from "../lib/parser";
+import { type FirecrawlResponse } from "../lib/parser";
+import Modal from "@mui/joy/Modal";
+import ModalDialog from "@mui/joy/ModalDialog";
+import ModalClose from "@mui/joy/ModalClose";
 
 interface Props {
-  onDataImported: (data: ScrapedData) => void;
+  onDataImported: (data: FirecrawlResponse | null) => void;
 }
 
 export default function ImportButton({ onDataImported }: Props) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openErrorModal, setOpenErrorModal] = useState(false);
 
   const validateCopartLotUrl = (input: string): boolean => {
     try {
@@ -56,7 +60,7 @@ export default function ImportButton({ onDataImported }: Props) {
       const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
         method: "POST",
         headers: {
-          Authorization: "Bearer fc-8bedb4c0aa494a47b6576de6c2bb2a61", // luego lo pasas a env
+          Authorization: `Bearer ${import.meta.env.VITE_FIRECRAWL}`, // luego lo pasas a env
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -104,10 +108,7 @@ export default function ImportButton({ onDataImported }: Props) {
                       bidding_increment: { type: "string" },
                       high_resolution_image_urls: {
                         type: "array",
-                        items: { type: "string", format: "url" },
-                      },
-                      thumbnail_image_urls: {
-                        type: "array",
+                        maxItems: 1,
                         items: { type: "string", format: "url" },
                       },
                       video_urls: {
@@ -133,7 +134,7 @@ export default function ImportButton({ onDataImported }: Props) {
       if (!res.ok) {
         const errText = await res.text();
         console.error(errText);
-        throw new Error("Error en scraping");
+        throw new Error("Error en scraping: " + errText);
       }
 
       const data = await res.json();
@@ -143,6 +144,7 @@ export default function ImportButton({ onDataImported }: Props) {
     } catch (e) {
       console.error(e);
       setError("Ocurrió un error al importar el vehículo.");
+      setOpenErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -200,6 +202,30 @@ export default function ImportButton({ onDataImported }: Props) {
           {loading ? "Importando..." : "Importar vehículo"}
         </Button>
       </Stack>
+      <Modal open={openErrorModal} onClose={() => setOpenErrorModal(false)}>
+        <ModalDialog>
+          <ModalClose />
+          <Typography level="title-md" sx={{ mb: 1 }}>
+            Error al importar
+          </Typography>
+          <Typography level="body-sm" sx={{ mb: 2 }}>
+            {error ?? "No se pudo obtener los datos del vehículo desde Copart."}
+          </Typography>
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Button variant="outlined" onClick={() => setOpenErrorModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                setOpenErrorModal(false);
+                onDataImported(null);
+              }}
+            >
+              Continuar de manera manual
+            </Button>
+          </Stack>
+        </ModalDialog>
+      </Modal>
     </Card>
   );
 }

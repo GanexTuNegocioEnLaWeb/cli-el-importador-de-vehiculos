@@ -1,61 +1,81 @@
-export interface VehicleData {
-  companyName: string;
-  companyDescription: string;
-  lotId: string;
-  year: number;
-  make: string;
-  model: string;
-  trim: string;
-  condition: string;
-  auctionDate: string;
-  location: string;
-  titleType: string;
-  timezone: string;
-  language: string;
-  sourceUrl: string;
-}
+import type {
+  CopartVehicleDetails,
+  VehicleData,
+} from "../types/vehicle.types";
 
-export interface ScrapedData {
-  metadata: {
-    title: string;
-    sourceURL: string;
-    timezone: string;
-    language: string;
-  };
-  json: {
-    company_name: string;
-    company_description: string;
+export interface FirecrawlResponse {
+  success: boolean;
+  data: {
+    metadata: {
+      sourceURL?: string;
+      url?: string;
+      language?: string;
+      timezone?: string;
+      title?: string;
+    };
+    json: {
+      copart_vehicle_details?: CopartVehicleDetails;
+    };
   };
 }
 
-export function parseVehicleData(raw: ScrapedData): VehicleData {
-  const metadata = raw.metadata;
-  const json = raw.json;
+export function parseVehicleData(raw: FirecrawlResponse): VehicleData {
+  const metadata = raw.data?.metadata ?? {};
+  const details = raw.data?.json?.copart_vehicle_details ?? {};
 
-  const titleParts = metadata.title.split("|").map((p: string) => p.trim());
-  const vehicleInfo = titleParts[0].split(" ");
+  const sourceUrl = metadata.sourceURL ?? metadata.url ?? "";
+  const lotId =
+    details.lot_number ??
+    sourceUrl.split("/lot/")[1]?.split("/")[0] ??
+    "";
 
-  const year = parseInt(vehicleInfo[0]);
-  const make = vehicleInfo[1];
-  const model = vehicleInfo[2];
-  const trim = vehicleInfo.slice(3).join(" ");
+  const ymm = (details.year_make_model ?? "").trim();
+  const ymmParts = ymm.split(/\s+/);
+  const year = parseInt(ymmParts[0] ?? "0") || 0;
+  const make = ymmParts[1] ?? "";
+  const model = (ymmParts[2] ?? "") + (ymmParts.length > 3 ? " " + ymmParts.slice(3).join(" ") : "");
+  const trim = "";
 
-  const lotId = metadata.sourceURL.split("/lot/")[1]?.split("/")[0] ?? "";
+  const auctionDate = details.sale_date ?? "";
+  const condition = details.highlights ?? details.run_and_drive ?? "";
+  const location = details.location ?? details.sale_name ?? "";
+  const titleType = details.title_code ?? "";
 
   return {
-    companyName: json.company_name,
-    companyDescription: json.company_description,
+    companyName: "",
+    companyDescription: "",
     lotId,
     year,
     make,
     model,
     trim,
-    condition: titleParts[1] ?? "",
-    auctionDate: new Date(titleParts[2]).toISOString().split("T")[0],
-    location: titleParts[3] ?? "",
-    titleType: metadata.sourceURL.includes("clean-title") ? "Clean Title" : "",
-    timezone: metadata.timezone,
-    language: metadata.language,
-    sourceUrl: metadata.sourceURL,
+    condition,
+    auctionDate,
+    location,
+    titleType,
+    timezone: metadata.timezone ?? "",
+    language: metadata.language ?? "",
+    sourceUrl,
+    copartDetails: details,
+  };
+}
+
+export function makeEmptyVehicle(sourceUrl: string = ""): VehicleData {
+  return {
+    companyName: "",
+    companyDescription: "",
+    lotId: "",
+    year: 0,
+    make: "",
+    model: "",
+    trim: "",
+    condition: "",
+    auctionDate: "",
+    location: "",
+    titleType: "",
+    timezone: "",
+    language: "",
+    sourceUrl,
+    copartDetails: {},
   };
 }
